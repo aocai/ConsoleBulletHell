@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <vector>
 #include <algorithm>
+#include <mutex>
 
 extern QuadtreeNode *qNode;
+extern std::mutex objMtx;
 
 
 QuadtreeNode::QuadtreeNode()
@@ -17,37 +19,36 @@ QuadtreeNode::~QuadtreeNode()
 
 void QuadtreeNode::createSubNodes() 
 {
-
 	nw = new QuadtreeNode();
 	nw->parent = this;
-	nw->xMin = xMin;
-	nw->xMax = xCenter();
-	nw->yMin = yMin;
-	nw->yMax = yCenter();
+	nw->minX = minX;
+	nw->maxX = xCenter();
+	nw->minY = minY;
+	nw->maxY = yCenter();
 	nw->nodeObjectVector = new std::vector<Object *>();
 
 	ne = new QuadtreeNode();
 	ne->parent = this;
-	ne->xMin = xCenter() + 1;
-	ne->xMax = xMax;
-	ne->yMin = yMin;
-	ne->yMax = yCenter();
+	ne->minX = xCenter() + 1;
+	ne->maxX = maxX;
+	ne->minY = minY;
+	ne->maxY = yCenter();
 	ne->nodeObjectVector = new std::vector<Object *>();
 
 	sw = new QuadtreeNode();
 	sw->parent = this;
-	sw->xMin = xMin;
-	sw->xMax = xCenter();
-	sw->yMin = yCenter() + 1;
-	sw->yMax = yMax;
+	sw->minX = minX;
+	sw->maxX = xCenter();
+	sw->minY = yCenter() + 1;
+	sw->maxY = maxY;
 	sw->nodeObjectVector = new std::vector<Object *>();
 
 	se = new QuadtreeNode();
 	se->parent = this;
-	se->xMin = xCenter() + 1;
-	se->xMax = xMax;
-	se->yMin = yCenter() + 1;
-	se->yMax = yMax;
+	se->minX = xCenter() + 1;
+	se->maxX = maxX;
+	se->minY = yCenter() + 1;
+	se->maxY = maxY;
 	se->nodeObjectVector = new std::vector<Object *>();
 }
 
@@ -65,8 +66,7 @@ void QuadtreeNode::assignQNode(Object* obj)
 		nodeObjectVector->push_back(obj);
 		return;
 	}
-	else if (((obj->posX <= xCenter()) && (obj->posX + obj->width - 1 > xCenter())) ||
-		((obj->posY <= yCenter()) && (obj->posY + obj->height - 1 > yCenter()))) 
+	else if (onNodeCenters(obj))
 	{
 		//object lies on boundary between two nodes
 		nodeObjectVector->push_back(obj);
@@ -81,14 +81,29 @@ void QuadtreeNode::assignQNode(Object* obj)
 
 bool QuadtreeNode::objInQuadtreeNode(Object *obj) 
 {
-	if ((obj->posX > xMax) || 
-		(obj->posX + obj->width - 1 < xMin) ||
-		(obj->posY + obj->height - 1 < yMin) ||
-		(obj->posY > yMax)) 
+	if ((obj->minX > maxX) || 
+		(obj->maxX < minX) ||
+		(obj->maxY < minY) ||
+		(obj->minY > maxY)) 
 	{
 		return false;
 	}
 	return true;
+}
+
+bool QuadtreeNode::onNodeCenters(Object* obj)
+{
+	if ((obj->minX <= xCenter() && 
+		obj->maxX > xCenter()) ||
+		(obj->minY <= yCenter() && 
+		obj->maxY > yCenter()))
+	{
+		return true;
+	} 
+	else 
+	{
+		return false;
+	}
 }
 
 void QuadtreeNode::updateQuadtree()
@@ -103,35 +118,46 @@ void QuadtreeNode::updateQuadtree()
 
 	for (unsigned int i = 0; i < nodeObjectVector->size(); ++i)
 	{
-		Object *obj = (*nodeObjectVector)[i];
-		if (obj->markForErase || !obj->notOutOfBound())
+		if ((*nodeObjectVector)[i]->outOfBound())
 		{
-			delete obj;
-			nodeObjectVector->erase(nodeObjectVector->begin() + i);
+
+			//erase called here because of 50ms vs 100ms difference between object render and projectile render
+			//this means objects are removed right away upon collision instead of waiting for object to update next frame
+			(*nodeObjectVector)[i]->erase();
+
+			std::swap((*nodeObjectVector)[i], nodeObjectVector->back());
+			delete nodeObjectVector->back();
+			nodeObjectVector->resize(nodeObjectVector->size() - 1);
+			//nodeObjectVector->pop_back();
+			--i;
 		}
-		else if (!objInQuadtreeNode(obj))
+		else if (!objInQuadtreeNode((*nodeObjectVector)[i]))
 		{
 			//reassign the node through another tree traversal. Maybe optimize this with level by level?
-			qNode->assignQNode(obj);
-			nodeObjectVector->erase(nodeObjectVector->begin() + i);
-			//std::swap(obj, nodeObjectVector->back());
+			qNode->assignQNode((*nodeObjectVector)[i]);
+
+			std::swap((*nodeObjectVector)[i], nodeObjectVector->back());
 			//delete nodeObjectVector->back();
-			//nodeObjectVector->pop_back();
+			nodeObjectVector->pop_back();
+			--i;
 		}
 		else if (nw)
 		{
-			//check if on line, else call assignQNode() with this node as base
-			if (!(((obj->posX <= xCenter()) && (obj->posX + obj->width - 1 > xCenter())) ||
-				((obj->posY <= yCenter()) && (obj->posY + obj->height - 1 > yCenter()))))
+			//check if on line
+			if (!onNodeCenters((*nodeObjectVector)[i]))
 			{
-				//not on line
-				assignQNode(obj);
-				nodeObjectVector->erase(nodeObjectVector->begin() + i);
-				//std::swap(obj, nodeObjectVector->back());
+				//not on line. Call assignQNode() with this node as base
+				assignQNode((*nodeObjectVector)[i]);
+
+				std::swap((*nodeObjectVector)[i], nodeObjectVector->back());
 				//delete nodeObjectVector->back();
-				//nodeObjectVector->pop_back();
+
+				nodeObjectVector->pop_back();
+				--i;
 			}
+			//else do nothing. node still in same nodeObjectVector (not a leaf node)
 		}
+		//if all else fail, this means the node is still in the same leaf node and nodeObjectVector
 	}
 }
 
@@ -146,10 +172,7 @@ void QuadtreeNode::renderFromTree()
 	}
 	for (unsigned int i = 0; i < nodeObjectVector->size(); ++i)
 	{
-		if (!((*nodeObjectVector)[i]->markForErase || (*nodeObjectVector)[i]->collision))
-		{
-			(*nodeObjectVector)[i]->render();
-		}
+		(*nodeObjectVector)[i]->render();
 	}
 }
 
@@ -174,10 +197,6 @@ void QuadtreeNode::updateObject()
 		{
 			obj->first = false;
 		}
-		if (obj->collision)
-		{
-			obj->markForErase = true;
-		}
 	}
 }
 
@@ -194,38 +213,6 @@ void QuadtreeNode::eraseAllObjects()
 	{
 		delete (*nodeObjectVector)[i];
 	}
+
 	nodeObjectVector->clear();
 }
-
-
-//updateQuadtreeNode() has kinda same performance as building a new tree from scratch...
-//void QuadtreeNode::updateQuadtreeNode() 
-//{
-//	if (nw == NULL) 
-//	{
-//		for (int i = 0; i < nodeObjectVector->size(); ++i)
-//		{
-//			if (!objInQuadtreeNode((*nodeObjectVector)[i]))
-//			{
-//
-//			}
-//		}
-//	}
-//}
-
-//instead of "deleting" Object right away when they go out of screen (by adding and removing from objVect), 
-//"delete" them later on before rendering by traversing Quadtree and render all in every nodeVector. This way
-//no daggling pointers
-
-//void QuadtreeNode::raytrace() {
-//	for (int i = 0; i < projVect1->size(); ++i) {
-//		//if do hit object in qNode
-//		if (qNode->collisionTest((*projVect1)[i])) {
-//			//remove projectile
-//			projVect3->push_back((*projVect1)[i]);
-//		}
-//		else {
-//			projVect2->push_back((*projVect1)[i]);
-//		}
-//	}
-//}

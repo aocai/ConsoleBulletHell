@@ -6,8 +6,8 @@ class Player :
 	public Object
 {
 public:
+	int width, height;
 	void spawn();
-	bool updateAndRender();
 	void erase();
 	void render();
 	bool playerInQuadtreeNode(QuadtreeNode *qNode);

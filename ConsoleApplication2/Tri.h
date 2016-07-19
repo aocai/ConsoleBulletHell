@@ -6,11 +6,8 @@ class Tri :
 {
 public:
 	void spawn();
-	bool updateAndRender();
 	void erase();
 	void render();
-	void update();
-	bool notOutOfBound();
 	Tri();
 	~Tri();
 };

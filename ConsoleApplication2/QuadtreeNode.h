@@ -6,18 +6,17 @@ class QuadtreeNode
 {
 public:
 	QuadtreeNode *parent, *nw, *ne, *sw, *se;
-	int xMin, xMax;
-	int yMin, yMax;
-	int xCenter() const { return (xMin + xMax) / 2; } //round down
-	int yCenter() const { return (yMin + yMax) / 2; }
+	int minX, maxX;
+	int minY, maxY;
+	int xCenter() const { return (minX + maxX) / 2; } //round down
+	int yCenter() const { return (minY + maxY) / 2; }
 
-	//Projectile *firstProjectile;
-	Object *firstObject;
 	std::vector<Object *> *nodeObjectVector;
 
 	void createSubNodes();
 	void assignQNode(Object* obj);
 	bool objInQuadtreeNode(Object * obj);
+	bool onNodeCenters(Object* obj);
 	void updateQuadtree();
 	void renderFromTree();
 	void updateObject();

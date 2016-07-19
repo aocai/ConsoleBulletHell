@@ -27,57 +27,48 @@ Player::~Player()
 
 void Player::spawn() 
 {
-	posX = 38;
-	posY = 70;
 	width = 5;
 	height = 1;
+	minX = 38;
+	minY = 70;
+	maxX = minX + width - 1;
+	maxY = minY + height - 1;
 	speedX = 0;
 	speedY = 0;
-	markForErase = false;
-	collision = false;
-	first = false;
-}
-
-bool Player::updateAndRender() 
-{
-	erase();
-
-	//get new position
-	posX += speedX;
-	posY += speedY;
-
-	speedX = 0;
-	speedY = 0;
-
-	//out of bound test
-	if (posY > 71) 
-	{
-		posY = 71;
-	}
-	else if (posY < 0) 
-	{
-		posY = 0;
-	}
-	if	(posX > 80 - width) 
-	{
-		posX = 80 - width;
-	}
-	else if (posX < 0) 
-	{
-		posX = 0;
-	}
-
-	//render new position
-	render();
-
-	return true;
 }
 
 void Player::update()
 {
 	//get new position
-	posX += speedX;
-	posY += speedY;
+	minX += speedX;
+	maxX += speedX;
+	minY += speedY;
+	maxY += speedY;
+
+	speedX = 0;
+	speedY = 0;
+
+	//out of bound test
+	if (maxY > 71)
+	{
+		maxY = 71;
+		minY = maxY - height + 1;
+	}
+	else if (minY < 0)
+	{
+		minY = 0;
+		maxY = minY + height - 1;
+	}
+	if (maxX > 79)
+	{
+		maxX = 79;
+		minX = maxX - width + 1;
+	}
+	else if (minX < 0)
+	{
+		minX = 0;
+		maxX = minX + width - 1;
+	}
 }
 
 void Player::erase() 
@@ -85,8 +76,8 @@ void Player::erase()
 
 	COORD coord;
 	//erase last render
-	coord.X = posX;
-	coord.Y = posY;
+	coord.X = minX;
+	coord.Y = minY;
 	consoleMtx.lock();
 	SetConsoleCursorPosition(handle, coord);
 	std::cout << "     ";
@@ -94,27 +85,11 @@ void Player::erase()
 }
 
 void Player::render() 
-{	//out of bound test
-	if (posY > 71)
-	{
-		posY = 71;
-	}
-	else if (posY < 0)
-	{
-		posY = 0;
-	}
-	if (posX > 80 - width)
-	{
-		posX = 80 - width;
-	}
-	else if (posX < 0)
-	{
-		posX = 0;
-	}
+{	
 	COORD coord;
 	//render new position
-	coord.X = posX;
-	coord.Y = posY;
+	coord.X = minX;
+	coord.Y = minY;
 	consoleMtx.lock();
 	SetConsoleCursorPosition(handle, coord);
 	std::cout << "=====";
@@ -123,10 +98,10 @@ void Player::render()
 
 bool Player::playerInQuadtreeNode(QuadtreeNode *qNode)
 {
-	if ((posX > qNode->xMax) ||
-		(posX + width - 1 < qNode->xMin) ||
-		(posY < qNode->yMin) ||
-		(posY + height - 1 > qNode->yMax))
+	if ((minX > qNode->maxX) ||
+		(maxX < qNode->minX) ||
+		(maxY < qNode->minY) ||
+		(minY > qNode->maxY))
 	{
 		return false;
 	}
@@ -140,21 +115,21 @@ bool Player::collisionDetection(QuadtreeNode *node)
 	{
 		return false;
 	}
+
 	if (!node->nodeObjectVector)
 	{
 		return false;
 	}
+
 	for (unsigned int i = 0; i < node->nodeObjectVector->size(); ++i)
 	{
-		//Object *obj = qNode->nodeObjectVector->operator[](i);
-		//WORKS LIKE THIS RIGHT??
 		Object *obj = (*node->nodeObjectVector)[i];
 		//if player and object do not touch...
 		//TODO: change to check if prev.position - current.position emcompasses the object...
-		if ((posX > obj->posX + obj->width - 1) ||
-			(posX + width - 1 < obj->posX) ||
-			(posY > obj->posY + obj->height - 1) ||
-			(posY + height - 1 < obj->posY))
+		if ((minX > obj->maxX) ||
+			(maxX < obj->minX) ||
+			(minY > obj->maxY) ||
+			(maxY < obj->minY))
 		{
 			//no collision, keep player
 			return false;
@@ -165,6 +140,7 @@ bool Player::collisionDetection(QuadtreeNode *node)
 			return true;
 		}
 	}
+
 	if (node->nw == NULL)
 	{
 		return false;
@@ -181,18 +157,14 @@ bool Player::collisionDetection(QuadtreeNode *node)
 
 void Player::spawnShortBeam() 
 {
-	projMtx.lock();
 	Projectile *shortBeam = new ShortBeam();
-	shortBeam->spawnProj(posX, posY);
+	shortBeam->spawnProj(minX, minY);
 
-	//track if return true. Else free it
-	if (shortBeam->updateAndRender()) 
-	{
-		projVect1->push_back(shortBeam);
-	}
-	else {
-		delete shortBeam;
-	}
+	projMtx.lock();
+
+	shortBeam->render();
+	projVect1->push_back(shortBeam);
+
 	projMtx.unlock();
 }
 
@@ -200,48 +172,23 @@ void Player::spawnNormalAtk()
 {
 	Projectile *normalAtkLeft = new NormalAtk();
 	Projectile *normalAtkRight = new NormalAtk();
-	normalAtkLeft->spawnProj(posX, posY);
-	normalAtkRight->spawnProj(posX + 4, posY);
+	normalAtkLeft->spawnProj(minX, minY);
+	normalAtkRight->spawnProj(minX + 4, minY);
 
 	projMtx.lock();
-	//track if return true. Else free it
-	if (normalAtkLeft->updateAndRender()) 
-	{
-		projVect1->push_back(normalAtkLeft);
-	}
-	else {
-		delete normalAtkLeft;
-	}
-	if (normalAtkRight->updateAndRender()) 
-	{
-		projVect1->push_back(normalAtkRight);
-	}
-	else {
-		delete normalAtkRight;
-	}
+
+	normalAtkLeft->render();
+	normalAtkRight->render();
+	projVect1->push_back(normalAtkLeft);
+	projVect1->push_back(normalAtkRight);
+
 	projMtx.unlock();
 }
 
 void Player::ult() 
 {
-	objMtx.lock();
 
 	qNode->updateObject();
 	qNode->eraseAllObjects();
 
-	//for (unsigned int i = 0; i < objVect1->size(); ++i) 
-	//{
-	//	(*objVect1)[i]->erase();
-
-	//}
-
-	//for (std::vector<Object *>::iterator it = objVect2->begin(); it != objVect2->end(); ++it) 
-	//{
-	//	delete *it;
-	//}
-	//object pointers in objVect1 but not in objVect2 are in objVect3, and will be freed later on
-	//objVect1->clear();
-	//objVect2->clear();
-
-	objMtx.unlock();
 }
