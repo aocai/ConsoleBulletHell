@@ -34,10 +34,10 @@ void Projectile::render()
 {
 }
 
+//return true if projectile is not out of bound
 bool Projectile::notOutOfBound()
 {
-	//out of bound test for whole beam
-	//currently beams are erased right away if out of bound on X axis without non out of bound segment rendering
+	//out of bound test
 	if ((minY < 0) || (maxY > 71) || (minX < 0) || (maxX > 80))
 	{
 		return false;
@@ -46,6 +46,7 @@ bool Projectile::notOutOfBound()
 
 }
 
+//return true if projectile touches node
 bool Projectile::projInQuadtreeNode(QuadtreeNode *node)
 {
 	if ((minX > node->maxX) ||
@@ -59,59 +60,39 @@ bool Projectile::projInQuadtreeNode(QuadtreeNode *node)
 	return true;
 }
 
-bool Projectile::collisionTest(QuadtreeNode *node)
+//check if projectile collide with object
+void Projectile::collisionTest(QuadtreeNode *node)
 {
+	//reject all child nodes if projectile is not in this node
 	if (!projInQuadtreeNode(node))
 	{
-		return false;
+		return;
 	}
-	if (!node->nodeObjectVector)
+
+	//if child nodes exist, recurse through
+	if (node->nw)
 	{
-		return false;
+		collisionTest(node->nw);
+		collisionTest(node->ne);
+		collisionTest(node->sw);
+		collisionTest(node->se);
 	}
 
 	for (unsigned int i = 0; i < node->nodeObjectVector->size(); ++i)
 	{
 		Object *obj = (*node->nodeObjectVector)[i];
-		//if projectile and object do not touch...
-		//TODO: change to check if prev.position - current.position emcompasses the object...
-		if ((minX > obj->maxX) ||
-			(maxX < obj->minX) ||
-			(maxY < obj->minY) ||
-			(minY > obj->maxY))
-		{
-			//keep projectile
-			return false;
-		}
-		else
-		{
-			//collision detected.
-			//if ((*node->nodeObjectVector)[i]->collision == true)
-			//{
-			//	//only one projectile can be colliding 
-			//	return false;
-			//}
-			//(*node->nodeObjectVector)[i]->collision = true;
-			(*node->nodeObjectVector)[i]->erase();
 
-			std::swap((*node->nodeObjectVector)[i], node->nodeObjectVector->back());
-			delete node->nodeObjectVector->back();
-			node->nodeObjectVector->resize(node->nodeObjectVector->size() - 1);
-			finalScore++;
-			return true;
+		if (((minX >= obj->minX && minX <= obj->maxX) || (maxX >= obj->minX && maxX <= obj->maxX)) &&
+			((minY >= obj->minY && minY <= obj->maxY) || (maxY >= obj->minY && maxY <= obj->maxY)))
+		{
+			//collision detected!
+			if (!obj->collision)
+			{
+				//only flag if this is the first projectile to collide with object
+				obj->collision = true;
+				collision = true;
+				finalScore++;
+			}
 		}
 	}
-
-	if (node->nw == NULL)
-	{
-		return false;
-	}
-	if (collisionTest(node->nw) ||
-		collisionTest(node->ne) ||
-		collisionTest(node->sw) ||
-		collisionTest(node->se))
-	{
-		return true;
-	}
-	return false;
 }

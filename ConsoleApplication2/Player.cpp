@@ -8,12 +8,8 @@
 #include <mutex>
 
 extern HANDLE handle;
-//extern std::vector<Object *> *objVect1;
-//extern std::vector<Object *> *objVect2;
-extern std::vector<Projectile *> *projVect1;
-extern std::vector<Projectile *> *projVect3;
+extern std::vector<Projectile *> *renderProjVector;
 extern std::mutex consoleMtx;
-extern std::mutex objMtx;
 extern std::mutex projMtx;
 extern QuadtreeNode *qNode;
 
@@ -35,42 +31,63 @@ void Player::spawn()
 	maxY = minY + height - 1;
 	speedX = 0;
 	speedY = 0;
+	collision = false;
 }
 
 void Player::update()
 {
+	//bound player speed
+	if (speedX > 3)
+	{
+		speedX = 3;
+	}
+	else if (speedX < -3)
+	{
+		speedX = -3;
+	}
+	if (speedY > 2)
+	{
+		speedY = 2;
+	}
+	else if (speedY < -2)
+	{
+		speedY = -2;
+	}
+
 	//get new position
 	minX += speedX;
 	maxX += speedX;
 	minY += speedY;
 	maxY += speedY;
 
-	speedX = 0;
-	speedY = 0;
-
 	//out of bound test
-	if (maxY > 71)
+	if (maxY > 70)
 	{
-		maxY = 71;
+		maxY = 70;
 		minY = maxY - height + 1;
+		speedY = 0;
 	}
 	else if (minY < 0)
 	{
 		minY = 0;
 		maxY = minY + height - 1;
+		speedY = 0;
 	}
 	if (maxX > 79)
 	{
 		maxX = 79;
 		minX = maxX - width + 1;
+		speedX = 0;
 	}
 	else if (minX < 0)
 	{
 		minX = 0;
 		maxX = minX + width - 1;
+		speedX = 0;
 	}
 }
 
+//erase using console
 void Player::erase() 
 {
 
@@ -84,6 +101,7 @@ void Player::erase()
 	consoleMtx.unlock();
 }
 
+//render using console
 void Player::render() 
 {	
 	COORD coord;
@@ -96,65 +114,52 @@ void Player::render()
 	consoleMtx.unlock();
 }
 
-bool Player::playerInQuadtreeNode(QuadtreeNode *qNode)
+//check if player is in Quadtree node. Return true if any part of player touches node
+bool Player::playerInQuadtreeNode(QuadtreeNode *node)
 {
-	if ((minX > qNode->maxX) ||
-		(maxX < qNode->minX) ||
-		(maxY < qNode->minY) ||
-		(minY > qNode->maxY))
+	if ((minX > node->maxX) ||
+		(maxX < node->minX) ||
+		(maxY < node->minY) ||
+		(minY > node->maxY))
 	{
 		return false;
 	}
 	return true;
 }
 
-
-bool Player::collisionDetection(QuadtreeNode *node)
+//check if player collided with an object, and if so, flag it
+void Player::collisionDetection(QuadtreeNode *node)
 {
+	//reject all child nodes if player is not in this node
 	if (!playerInQuadtreeNode(node))
 	{
-		return false;
+		return;
 	}
 
-	if (!node->nodeObjectVector)
+	//if there are child nodes, recurse
+	if (node->nw)
 	{
-		return false;
+		collisionDetection(node->nw);
+		collisionDetection(node->ne);
+		collisionDetection(node->sw);
+		collisionDetection(node->se);
 	}
 
 	for (unsigned int i = 0; i < node->nodeObjectVector->size(); ++i)
 	{
 		Object *obj = (*node->nodeObjectVector)[i];
-		//if player and object do not touch...
-		//TODO: change to check if prev.position - current.position emcompasses the object...
-		if ((minX > obj->maxX) ||
-			(maxX < obj->minX) ||
-			(minY > obj->maxY) ||
-			(maxY < obj->minY))
-		{
-			//no collision, keep player
-			return false;
-		}
-		else
-		{
-			//player collision detected.
-			return true;
-		}
-	}
 
-	if (node->nw == NULL)
-	{
-		return false;
+		//check if object touches player
+		if (((minX >= obj->minX && minX <= obj->maxX) || (maxX >= obj->minX && maxX <= obj->maxX)) &&
+			((minY >= obj->minY && minY <= obj->maxY) || (maxY >= obj->minY && maxY <= obj->maxY)))
+		{
+			//collision detected
+			collision = true;
+		}
 	}
-	if (collisionDetection(node->nw) ||
-		collisionDetection(node->ne) ||
-		collisionDetection(node->sw) ||
-		collisionDetection(node->se))
-	{
-		return true;
-	}
-	return false;
 }
 
+//spawn new projectile and add to list of projectiles
 void Player::spawnShortBeam() 
 {
 	Projectile *shortBeam = new ShortBeam();
@@ -163,11 +168,12 @@ void Player::spawnShortBeam()
 	projMtx.lock();
 
 	shortBeam->render();
-	projVect1->push_back(shortBeam);
+	renderProjVector->push_back(shortBeam);
 
 	projMtx.unlock();
 }
 
+//spawn new projectile and add to list of projectiles
 void Player::spawnNormalAtk() 
 {
 	Projectile *normalAtkLeft = new NormalAtk();
@@ -179,16 +185,15 @@ void Player::spawnNormalAtk()
 
 	normalAtkLeft->render();
 	normalAtkRight->render();
-	projVect1->push_back(normalAtkLeft);
-	projVect1->push_back(normalAtkRight);
+	renderProjVector->push_back(normalAtkLeft);
+	renderProjVector->push_back(normalAtkRight);
 
 	projMtx.unlock();
 }
 
+//delete all projectiles
 void Player::ult() 
 {
-
 	qNode->updateObject();
 	qNode->eraseAllObjects();
-
 }

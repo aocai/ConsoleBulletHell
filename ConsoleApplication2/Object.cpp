@@ -1,5 +1,4 @@
 #include "Object.h"
-#include <iostream>
 
 Object::Object()
 {
@@ -29,6 +28,7 @@ void Object::update()
 	minY += speedY;
 	maxY += speedY;
 
+	//change direction of object if out of bound
 	if (maxX > 79)
 	{
 		speedX = -speedX;
@@ -45,8 +45,8 @@ void Object::update()
 
 bool Object::outOfBound()
 {
-	//out of bound test
-	if (minY <= 71)
+	//out of screen (Y direction) test
+	if (minY <= 70)
 	{
 		return false;
 	}

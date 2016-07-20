@@ -27,8 +27,10 @@ void NormalAtk::spawnProj(int x, int y)
 	speedX = 0;
 	speedY = -1;
 	first = true;
+	collision = false;
 }
 
+//erase in console
 void NormalAtk::erase() 
 {
 
@@ -43,6 +45,7 @@ void NormalAtk::erase()
 	consoleMtx.unlock();
 }
 
+//render in console
 void NormalAtk::render() 
 {
 

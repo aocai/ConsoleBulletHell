@@ -5,8 +5,6 @@
 #include <mutex>
 
 extern QuadtreeNode *qNode;
-extern std::mutex objMtx;
-
 
 QuadtreeNode::QuadtreeNode()
 {
@@ -16,7 +14,7 @@ QuadtreeNode::~QuadtreeNode()
 {
 }
 
-
+//create sub nodes nw, ne, sw, se and object vector
 void QuadtreeNode::createSubNodes() 
 {
 	nw = new QuadtreeNode();
@@ -52,6 +50,7 @@ void QuadtreeNode::createSubNodes()
 	se->nodeObjectVector = new std::vector<Object *>();
 }
 
+//assign the object to the correct quadtree node
 void QuadtreeNode::assignQNode(Object* obj) 
 {
 	if (!objInQuadtreeNode(obj)) 
@@ -59,8 +58,7 @@ void QuadtreeNode::assignQNode(Object* obj)
 		//trivially rejects all child nodes
 		return;
 	}
-
-	if (nw == NULL) 
+	else if (nw == NULL) 
 	{
 		//object lies in the leaf node
 		nodeObjectVector->push_back(obj);
@@ -72,25 +70,30 @@ void QuadtreeNode::assignQNode(Object* obj)
 		nodeObjectVector->push_back(obj);
 		return;
 	}
-	//check child nodes if all ifs fail
-	nw->assignQNode(obj);
-	ne->assignQNode(obj);
-	sw->assignQNode(obj);
-	se->assignQNode(obj);
+	else
+	{
+		//check child nodes if all ifs fail
+		nw->assignQNode(obj);
+		ne->assignQNode(obj);
+		sw->assignQNode(obj);
+		se->assignQNode(obj);
+	}
 }
 
+//return false for objects on node boundaries
 bool QuadtreeNode::objInQuadtreeNode(Object *obj) 
 {
-	if ((obj->minX > maxX) || 
-		(obj->maxX < minX) ||
-		(obj->maxY < minY) ||
-		(obj->minY > maxY)) 
+	if ((obj->minX >= minX) && 
+		(obj->maxX <= maxX) && 
+		(obj->minY >= minY) && 
+		(obj->maxY <= maxY))
 	{
-		return false;
+		return true;
 	}
-	return true;
+	return false;
 }
 
+//check if object lies on the quad node center
 bool QuadtreeNode::onNodeCenters(Object* obj)
 {
 	if ((obj->minX <= xCenter() && 
@@ -106,8 +109,10 @@ bool QuadtreeNode::onNodeCenters(Object* obj)
 	}
 }
 
+//update objects in quadtree, and move them to new nodes if necessary
 void QuadtreeNode::updateQuadtree()
 {
+	//if there are child nodes
 	if (nw) 
 	{
 		nw->updateQuadtree();
@@ -118,40 +123,34 @@ void QuadtreeNode::updateQuadtree()
 
 	for (unsigned int i = 0; i < nodeObjectVector->size(); ++i)
 	{
-		if ((*nodeObjectVector)[i]->outOfBound())
+		//object is out of bound or there has been a collision. object is removed from tree
+		if ((*nodeObjectVector)[i]->outOfBound() || (*nodeObjectVector)[i]->collision)
 		{
-
-			//erase called here because of 50ms vs 100ms difference between object render and projectile render
-			//this means objects are removed right away upon collision instead of waiting for object to update next frame
-			(*nodeObjectVector)[i]->erase();
-
 			std::swap((*nodeObjectVector)[i], nodeObjectVector->back());
 			delete nodeObjectVector->back();
 			nodeObjectVector->resize(nodeObjectVector->size() - 1);
-			//nodeObjectVector->pop_back();
 			--i;
 		}
+		//check if object is still in this quadtree node
 		else if (!objInQuadtreeNode((*nodeObjectVector)[i]))
 		{
-			//reassign the node through another tree traversal. Maybe optimize this with level by level?
+			//object is in another quadtree node. reassign the node through another tree traversal from base node, qNode
 			qNode->assignQNode((*nodeObjectVector)[i]);
 
 			std::swap((*nodeObjectVector)[i], nodeObjectVector->back());
-			//delete nodeObjectVector->back();
 			nodeObjectVector->pop_back();
 			--i;
 		}
 		else if (nw)
 		{
-			//check if on line
+			//object is in this node, and there are child nodes
+			//check if on sub node boundaries
 			if (!onNodeCenters((*nodeObjectVector)[i]))
 			{
-				//not on line. Call assignQNode() with this node as base
+				//not on sub node boundaries. Call assignQNode() with this node as base
 				assignQNode((*nodeObjectVector)[i]);
 
 				std::swap((*nodeObjectVector)[i], nodeObjectVector->back());
-				//delete nodeObjectVector->back();
-
 				nodeObjectVector->pop_back();
 				--i;
 			}
@@ -161,6 +160,7 @@ void QuadtreeNode::updateQuadtree()
 	}
 }
 
+//render all objects in quadtree through recursion
 void QuadtreeNode::renderFromTree()
 {
 	if (nw)
@@ -176,6 +176,7 @@ void QuadtreeNode::renderFromTree()
 	}
 }
 
+//erase object's current render on console, and update position based on speed in X and Y
 void QuadtreeNode::updateObject()
 {
 	if (nw) 
@@ -191,15 +192,20 @@ void QuadtreeNode::updateObject()
 		if (!obj->first)
 		{
 			obj->erase();
-			obj->update();
+			if (!obj->collision)
+			{
+				obj->update();
+			}
 		}
 		else
 		{
+			//object just initialized, do not need to erase and update position
 			obj->first = false;
 		}
 	}
 }
 
+//erase all objects in quadtree
 void QuadtreeNode::eraseAllObjects()
 {
 	if (nw)
@@ -215,4 +221,24 @@ void QuadtreeNode::eraseAllObjects()
 	}
 
 	nodeObjectVector->clear();
+}
+
+//free quadtree memory. called at game's end
+void QuadtreeNode::freeQuadtree()
+{
+	if (nw)
+	{
+		nw->freeQuadtree();
+		ne->freeQuadtree();
+		sw->freeQuadtree();
+		se->freeQuadtree();
+	}
+	delete nodeObjectVector;
+	if (nw)
+	{
+		delete nw;
+		delete ne;
+		delete sw;
+		delete se;
+	}
 }

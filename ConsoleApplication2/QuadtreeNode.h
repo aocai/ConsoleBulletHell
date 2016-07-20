@@ -21,6 +21,7 @@ public:
 	void renderFromTree();
 	void updateObject();
 	void eraseAllObjects();
+	void freeQuadtree();
 
 	QuadtreeNode();
 	~QuadtreeNode();

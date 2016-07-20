@@ -27,8 +27,10 @@ void ShortBeam::spawnProj(int x, int y)
 	speedX = 0;
 	speedY = -3;
 	first = true;
+	collision = false;
 }
 
+//erase in console
 void ShortBeam::erase() 
 {
 
@@ -49,6 +51,7 @@ void ShortBeam::erase()
 	consoleMtx.unlock();
 }
 
+//render in console
 void ShortBeam::render() 
 {
 

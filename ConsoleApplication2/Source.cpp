@@ -6,36 +6,50 @@
 #include <conio.h>
 #include <thread>
 #include "Source.h"
-#include <algorithm> //for testing
+#include <time.h>
 
 #define _WIN32_WINNT 0x500
 
 bool isGameOver;
+int NODE_MIN_WIDTH = 12;
+int NODE_MIN_HEIGHT = 8;
+int SIZE_ZERO = 0;
+int MAX_HEIGHT = 71;
+int MAX_WIDTH = 80;
 
+//clear console by printing empty strings
 void clearConsole()
 {
 	std::string emptyString = "                                                                                ";
+
 	COORD coord;
 	//render new position
 	coord.X = 0;
 	coord.Y = 0;
-	while (coord.Y <= 71) {
+	while (coord.Y <= 71) 
+	{
 		SetConsoleCursorPosition(handle, coord);
 		std::cout << emptyString;
 		coord.Y++;
 	}
 }
 
+//monitor start/end screen keyboard input
 void interfaceKB()
 {
 	int KB_code = 0;
-	while (KB_code != 27) {
+
+	//while ESC not pressed
+	while (KB_code != 27) 
+	{
 		if (_kbhit())
 		{
 			KB_code = _getch();
-			if (KB_code == 13) {
-				//KB_ENTER
 
+			//KB_ENTER
+			if (KB_code == 13) 
+			{
+				//clear previous render
 				clearConsole();
 
 				//restart
@@ -45,7 +59,7 @@ void interfaceKB()
 	}
 }
 
-
+//monitor Keyboard for movement/projectile input
 void monitorKB(Player *player)
 {
 	int KB_code = 0;
@@ -59,59 +73,19 @@ void monitorKB(Player *player)
 			{
 				//KB_LEFT
 			case 75:
-				player->speedX = -1;
-				player->speedY = 0;
-
-				player->erase();
-				player->update();
-				player->render();
-				if (player->collisionDetection(qNode))
-				{
-					isGameOver = true;
-					gameOver();
-				}
+				player->speedX -= 1;
 				break;
 				//KB_RIGHT
 			case 77:
-				player->speedX = 1;
-				player->speedY = 0;
-
-				player->erase();
-				player->update();
-				player->render();
-				if (player->collisionDetection(qNode))
-				{
-					isGameOver = true;
-					gameOver();
-				}
+				player->speedX += 1;
 				break;
 				//KB_UP
 			case 72:
-				player->speedX = 0;
-				player->speedY = -1;
-
-				player->erase();
-				player->update();
-				player->render();
-				if (player->collisionDetection(qNode))
-				{
-					isGameOver = true;
-					gameOver();
-				}
+				player->speedY -= 1;
 				break;
 				//KB_DOWN
 			case 80:
-				player->speedX = 0;
-				player->speedY = 1;
-
-				player->erase();
-				player->update();
-				player->render();
-				if (player->collisionDetection(qNode))
-				{
-					isGameOver = true;
-					gameOver();
-				}
+				player->speedY += 1;
 				break;
 				//KB_Z
 			case 122:
@@ -127,126 +101,40 @@ void monitorKB(Player *player)
 			case 32:
 				player->ult();
 				break;
+				//KB_ESC
 			case 27:
 				isGameOver = true;
-				gameOver();
 			}
 
 		}
 	}
 }
 
-void monitorProj() 
-{
-	while (!isGameOver)
-	{
-		projMtx.lock();
-
-		for (unsigned int i = 0; i < projVect1->size(); ++i)
-		{
-			Projectile *proj = (*projVect1)[i];
-			if (!proj->first)
-			{
-				//erase the render and update the position
-				proj->erase();
-				proj->update();
-			}
-			else
-			{
-				proj->first = false;
-			}
-			if (proj->notOutOfBound()) {
-				//proj to be tested for collision
-				projVect2->push_back(proj);
-			}
-			else
-			{
-				//proj to be thrown away
-				projVect3->push_back(proj);
-			}
-		}
-
-		projVect1->clear();
-
-		projMtx.unlock();
-
-		objMtx.lock();
-
-		//update tree
-		qNode->updateQuadtree();
-
-		objMtx.unlock();
-
-		projMtx.lock();
-
-		//check collision. Both objects and projectiles are rejected here.
-		for (unsigned int i = 0; i < projVect2->size(); ++i)
-		{
-			Projectile *proj = (*projVect2)[i];
-			if (proj->collisionTest(qNode))
-			{
-				//collision detected, throw away projectile
-				projVect3->push_back(proj);
-			}
-			else
-			{
-				projVect1->push_back(proj);
-			}
-		}
-
-		for (unsigned int i = 0; i < projVect1->size(); ++i)
-		{
-			(*projVect1)[i]->render();
-		}
-
-		projVect2->clear();
-
-		for (unsigned int i = 0; i < projVect3->size(); ++i)
-		{
-			delete (*projVect3)[i];
-		}
-
-		projVect3->clear();
-
-		projMtx.unlock();
-		
-		Sleep(50);
-	}
-}
-
-
+//Clear console, free all memory and print end game screen
 void gameOver()
 {
-	player->erase();
-
-	//erase render
-	qNode->updateObject();
-	//clear quadtree
+	//clear quadtree and delete all objects
 	qNode->eraseAllObjects();
+	
+	clearConsole();
 
-	for (unsigned int i = 0; i < projVect1->size(); ++i)
+	//delete and clear from the three projectile vectors
+	for (unsigned int i = 0; i < renderProjVector->size(); ++i)
 	{
-		(*projVect1)[i]->erase();
-		delete (*projVect1)[i];
+		(*renderProjVector)[i]->erase();
+		delete (*renderProjVector)[i];
 	}
 
-	for (unsigned int i = 0; i < projVect2->size(); ++i)
+	for (unsigned int i = 0; i < deleteProjVector->size(); ++i)
 	{
-		(*projVect2)[i]->erase();
-		delete (*projVect2)[i];
+		(*deleteProjVector)[i]->erase();
+		delete (*deleteProjVector)[i];
 	}
 
-	for (unsigned int i = 0; i < projVect3->size(); ++i)
-	{
-		(*projVect3)[i]->erase();
-		delete (*projVect3)[i];
-	}
+	renderProjVector->clear();
+	deleteProjVector->clear();
 
-	projVect1->clear();
-	projVect2->clear();
-	projVect3->clear();
-
-
+	//Print end screen
 	COORD coord;
 	//render new position
 	coord.X = 30;
@@ -255,70 +143,151 @@ void gameOver()
 	std::cout << "GAME OVER!";
 	coord.Y += 1;
 	SetConsoleCursorPosition(handle, coord);
-	if (finalScore < 100) {
+	if (finalScore < 100) 
+	{
 		std::cout << "Only " << finalScore << "? Pft are you even trying";
 	}
-	else if (finalScore < 250) {
-		std::cout << "I guess " << finalScore << "is decent...";
+	else if (finalScore < 250) 
+	{
+		std::cout << "I guess " << finalScore << " is decent...";
 	}
-	else if (finalScore > 500) {
+	else if (finalScore > 500) 
+	{
 		std::cout << "Wow " << finalScore << "... dont you have anything better to do?";
 	}
 	coord.Y += 1;
 	SetConsoleCursorPosition(handle, coord);
 	std::cout << "PRESS ENTER TO RESTART!";
+	coord.Y += 1;
+	SetConsoleCursorPosition(handle, coord);
 }
 
-void setup() 
+
+void updateProjectile()
+{
+	//erase all current projectile before next frame
+	for (unsigned int i = 0; i < renderProjVector->size(); ++i)
+	{
+		Projectile *proj = (*renderProjVector)[i];
+		if (!proj->first)
+		{
+			//erase the render and update the position
+			proj->erase();
+			if (!proj->collision)
+			{
+				proj->update();
+			}
+		}
+		else
+		{
+			proj->first = false;
+		}
+		if (proj->notOutOfBound()) 
+		{
+			//keep in projVect1, do nothing
+		}
+		else
+		{
+			//proj to be thrown away
+			deleteProjVector->push_back(proj);
+			std::swap((*renderProjVector)[i], renderProjVector->back());
+			renderProjVector->pop_back();
+			--i;
+		}
+	}
+}
+
+void setup()
 {
 	while (!isGameOver)
 	{
-		objMtx.lock();
-
 		//random generate objects
-		if (rand() % 5 == 0) 
+		if (rand() % 5 == 0)
 		{
 			Object *tri = new Tri();
 			tri->spawn();
 			qNode->assignQNode(tri);
 		}
-		if (rand() % 5 == 0) 
+		if (rand() % 5 == 0)
 		{
 			Object *circ = new Circ();
 			circ->spawn();
 			qNode->assignQNode(circ);
 		}
-		
-		//erase previous object render and update all object position
 
+		//erase previous object render and update all object position
 		qNode->updateObject();
 
-		//Update tree here:
+		//Update tree to reflect all object position change
 		qNode->updateQuadtree();
 
-		//Collision for objects are done with projectile collision
-		//TODO: Instead of rendering from objVect, render by recurrsing through the Quadtree.
+		//render object with updated position
 		qNode->renderFromTree();
 
-		if (!player->collisionDetection(qNode))
+		//erase previous projectile render and update all projectile position
+		projMtx.lock();
+		updateProjectile();
+		projMtx.unlock();
+
+		//render all projectiles. delete projectiles that have collision flagged
+		projMtx.lock();
+		for (unsigned int i = 0; i < renderProjVector->size(); ++i)
 		{
-			player->render();
+			if ((*renderProjVector)[i]->collision)
+			{
+				//collision flagged. Add to projVect3 to be deleted
+				deleteProjVector->push_back((*renderProjVector)[i]);
+				std::swap((*renderProjVector)[i], renderProjVector->back());
+				renderProjVector->pop_back();
+				--i;
+			}
+			else
+			{
+				//render
+				(*renderProjVector)[i]->render();
+			}
 		}
-		else {
-			//GAME OVER!
+		projMtx.unlock();
+
+		//update and render player
+		player->erase();
+		player->update();
+		player->render();
+
+		projMtx.lock();
+		//check collision. Both objects and projectiles that have collided are flagged
+		for (unsigned int i = 0; i < renderProjVector->size(); ++i)
+		{
+			Projectile *proj = (*renderProjVector)[i];
+			proj->collisionTest(qNode);
+		}
+
+		//check for player collision, and flag if true
+		player->collisionDetection(qNode);
+		if (player->collision)
+		{
 			isGameOver = true;
 		}
-		
-		objMtx.unlock();
 
-		Sleep(100);
+		//free non-rendered projectiles
+		for (unsigned int i = 0; i < deleteProjVector->size(); ++i)
+		{
+			delete (*deleteProjVector)[i];
+		}
+
+		deleteProjVector->clear();
+		projMtx.unlock();
+
+		Sleep(50);
 	}
 	gameOver();
 }
 
+//create initial Quadtree, with size restriction
 void createQuadtree(QuadtreeNode* node) 
 {
-	if ((node->maxX - node->minX > 12) && (node->maxY - node->minY > 8)) 
+	//bounds check
+	if ((node->maxX - node->minX > NODE_MIN_WIDTH) && (node->maxY - node->minY > NODE_MIN_HEIGHT)) 
 	{
 		node->createSubNodes();
 		createQuadtree(node->nw);
@@ -328,16 +297,17 @@ void createQuadtree(QuadtreeNode* node)
 	}
 }
 
+//initialize tree with max boundaries
 void initQNode(QuadtreeNode *node) 
 {
-	//maybe make this not hardcoded
-	node->minX = 0;
-	node->maxX = 80;
-	node->minY = 0;
-	node->maxY = 71;
+	node->minX = SIZE_ZERO;
+	node->maxX = MAX_WIDTH;
+	node->minY = SIZE_ZERO;
+	node->maxY = MAX_HEIGHT;
 	node->nodeObjectVector = new std::vector<Object *>();
 }
 
+//set up game. called at game start
 void setUpGameThread()
 {
 	isGameOver = false;
@@ -346,11 +316,9 @@ void setUpGameThread()
 	player->render();
 	std::thread setupThread(setup);
 	std::thread KeyPressThread(monitorKB, player);
-	std::thread monitorProjThread(monitorProj);
 
 	setupThread.join();
 	KeyPressThread.join();
-	monitorProjThread.join();
 }
 
 int main() 
@@ -358,6 +326,7 @@ int main()
 	HWND console = GetConsoleWindow();
 	MoveWindow(console, 0, 0, 800, 1200, TRUE);
 
+	//create Quadtree
 	qNode = new QuadtreeNode();
 	initQNode(qNode);
 	createQuadtree(qNode);
@@ -375,6 +344,9 @@ int main()
 
 	interfaceKBThread.join();
 
+	//Game has ended. Free quadtree
+	qNode->freeQuadtree();
+	delete qNode;
 
 	return 0;
 }
@@ -383,17 +355,19 @@ int main()
 /*
 Bug list:
 
-Figure out if hard coding the size of window is necessary. Also change the width/height of the window to not hardcoded but as a function of front size. Also see if front size can be set for compatibility across comps.
-
 Make object spawn rate increase throughout the game.
 >possibily add health to objects so they are not ohko'able
 
 Add more objects and projectiles. Possibily make objects able to fire projectiles
+>add cooldowns
 
 */
 
 /*
 Fixed/looked into:
+>Figure out if hard coding the size of window is necessary. Also change the width/height of the window to not hardcoded but as a function of front size. Also see if front size can be set for compatibility across comps.
+
+>No collision if player moving downward. Speeding in opposite direction (beside going up) problem.
 
 >Replace all loops using .size() with iterators...
 

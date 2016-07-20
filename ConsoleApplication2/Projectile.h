@@ -12,13 +12,14 @@ public:
 	int speedX; //right = positive
 	int speedY; //down = positive
 	bool first;
+	bool collision;
 	virtual void spawnProj(int x, int y);
 	virtual void erase();
 	virtual void update();
 	virtual void render();
 	virtual bool notOutOfBound();
 	virtual bool projInQuadtreeNode(QuadtreeNode *qNode);
-	virtual bool collisionTest(QuadtreeNode *qNode);
+	virtual void collisionTest(QuadtreeNode *qNode);
 	Projectile();
 	~Projectile();
 };

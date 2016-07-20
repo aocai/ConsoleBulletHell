@@ -11,7 +11,7 @@ public:
 	void erase();
 	void render();
 	bool playerInQuadtreeNode(QuadtreeNode *qNode);
-	bool collisionDetection(QuadtreeNode *node);
+	void collisionDetection(QuadtreeNode *node);
 	void spawnShortBeam();
 	void spawnNormalAtk();
 	void update();

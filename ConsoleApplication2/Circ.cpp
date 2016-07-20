@@ -17,8 +17,8 @@ Circ::~Circ()
 
 void Circ::spawn() 
 {
-	width = 1;
-	height = 1;
+	width = 3;
+	height = 2;
 	minX = rand() % 80;
 	minY = 0;
 	maxX = minX + width - 1;
@@ -26,32 +26,52 @@ void Circ::spawn()
 	speedX = rand() % 5 - 2;
 	speedY = 1;
 	first = true;
+	collision = false;
 }
 
+//erase object using console
 void Circ::erase() 
 {
-	if (!outOfBound()) {
+	if (!outOfBound()) 
+	{
 		COORD coord;
 		//erase last render
 		coord.X = minX;
 		coord.Y = minY;
 
+		//render from top down
 		consoleMtx.lock();
 		SetConsoleCursorPosition(handle, coord);
-		std::cout << " ";
+		std::cout << "   ";
+		coord.Y++;
+		if (coord.Y <= 70) 
+		{
+			SetConsoleCursorPosition(handle, coord);
+			std::cout << "   ";
+		}
 		consoleMtx.unlock();
 	}
 }
 
+//render object using console
 void Circ::render() 
 {
-	if (!outOfBound()) {
+	if (!outOfBound()) 
+	{
 		COORD coord;
 		coord.X = minX;
 		coord.Y = minY;
+
+		//render from top down
 		consoleMtx.lock();
 		SetConsoleCursorPosition(handle, coord);
-		std::cout << "O";
+		std::cout << "OOO";
+		coord.Y++;
+		if (coord.Y <= 70) 
+		{
+			SetConsoleCursorPosition(handle, coord);
+			std::cout << "OOO";
+		}
 		consoleMtx.unlock();
 	}
 }

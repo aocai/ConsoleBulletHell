@@ -25,22 +25,26 @@ void Tri::spawn()
 	speedX = rand() % 5 - 2;
 	speedY = 1;
 	first = true;
+	collision = false;
 }
 
+//erase object using console
 void Tri::erase() 
 {
-	if (!outOfBound()) {
+	if (!outOfBound()) 
+	{
 		COORD coord;
 		//erase last render
 		coord.X = minX;
 		coord.Y = minY;
 
+		//render from top down
 		consoleMtx.lock();
 		SetConsoleCursorPosition(handle, coord);
 		std::cout << "    ";
 
-		coord.Y += 1;
-		if (coord.Y <= 71) {
+		coord.Y++;
+		if (coord.Y <= 70) {
 			SetConsoleCursorPosition(handle, coord);
 			std::cout << "      ";
 		}
@@ -48,19 +52,23 @@ void Tri::erase()
 	}
 }
 
+//render object using console
 void Tri::render() 
 {
-	if (!outOfBound()) {
+	if (!outOfBound()) 
+	{
 		COORD coord;
 		coord.X = minX;
 		coord.Y = minY;
 
+		//render from top down
 		consoleMtx.lock();
 		SetConsoleCursorPosition(handle, coord);
 		std::cout << "  /\\";
 
-		coord.Y += 1;
-		if (coord.Y <= 71) {
+		coord.Y++;
+		if (coord.Y <= 70) 
+		{
 			SetConsoleCursorPosition(handle, coord);
 			std::cout << "/____\\";
 		}
