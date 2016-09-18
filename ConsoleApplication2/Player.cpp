@@ -4,14 +4,10 @@
 #include "Projectile.h"
 #include "ShortBeam.h"
 #include "NormalAtk.h"
+#include "QuadtreeNode.h"
+#include "Source.h"
 #include <vector>
 #include <mutex>
-
-extern HANDLE handle;
-extern std::vector<Projectile *> *renderProjVector;
-extern std::mutex consoleMtx;
-extern std::mutex projMtx;
-extern QuadtreeNode *qNode;
 
 Player::Player()
 {
@@ -26,7 +22,7 @@ void Player::spawn()
 	width = 5;
 	height = 1;
 	minX = 38;
-	minY = 70;
+	minY = MAX_HEIGHT - 1;
 	maxX = minX + width - 1;
 	maxY = minY + height - 1;
 	speedX = 0;
@@ -61,9 +57,9 @@ void Player::update()
 	maxY += speedY;
 
 	//out of bound test
-	if (maxY > 70)
+	if (maxY >= MAX_HEIGHT)
 	{
-		maxY = 70;
+		maxY = MAX_HEIGHT - 1;
 		minY = maxY - height + 1;
 		speedY = 0;
 	}
@@ -73,9 +69,9 @@ void Player::update()
 		maxY = minY + height - 1;
 		speedY = 0;
 	}
-	if (maxX > 79)
+	if (maxX >= MAX_WIDTH)
 	{
-		maxX = 79;
+		maxX = MAX_WIDTH - 1;
 		minX = maxX - width + 1;
 		speedX = 0;
 	}

@@ -1,6 +1,5 @@
 #pragma once
 #include "Projectile.h"
-#include "QuadtreeNode.h"
 
 class NormalAtk :
 	public Projectile

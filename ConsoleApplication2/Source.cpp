@@ -1,21 +1,30 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include "windows.h"
 #include <string>
 #include <iostream>
 #include <conio.h>
 #include <thread>
 #include "Source.h"
-#include <time.h>
-
-#define _WIN32_WINNT 0x500
+#include "Player.h"
+#include "QuadtreeNode.h"
+#include "Projectile.h"
+#include "Tri.h"
+#include "Circ.h"
 
 bool isGameOver;
-int NODE_MIN_WIDTH = 12;
-int NODE_MIN_HEIGHT = 8;
-int SIZE_ZERO = 0;
-int MAX_HEIGHT = 71;
-int MAX_WIDTH = 80;
+
+std::vector<Projectile *> *renderProjVector = new std::vector<Projectile *>();
+std::vector<Projectile *> *deleteProjVector = new std::vector<Projectile *>();
+
+const int NODE_MIN_WIDTH = 12;
+const int NODE_MIN_HEIGHT = 8;
+const int MAX_HEIGHT = 80;
+const int MAX_WIDTH = 80;
+int finalScore = 0;
+HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+QuadtreeNode *qNode = new QuadtreeNode();
+Player *player = new Player();
+std::mutex consoleMtx;
+std::mutex projMtx;
 
 //clear console by printing empty strings
 void clearConsole()
@@ -26,7 +35,7 @@ void clearConsole()
 	//render new position
 	coord.X = 0;
 	coord.Y = 0;
-	while (coord.Y <= 71) 
+	while (coord.Y <= MAX_HEIGHT)
 	{
 		SetConsoleCursorPosition(handle, coord);
 		std::cout << emptyString;
@@ -300,9 +309,9 @@ void createQuadtree(QuadtreeNode* node)
 //initialize tree with max boundaries
 void initQNode(QuadtreeNode *node) 
 {
-	node->minX = SIZE_ZERO;
+	node->minX = 0;
 	node->maxX = MAX_WIDTH;
-	node->minY = SIZE_ZERO;
+	node->minY = 0;
 	node->maxY = MAX_HEIGHT;
 	node->nodeObjectVector = new std::vector<Object *>();
 }
@@ -324,14 +333,11 @@ void setUpGameThread()
 int main() 
 {
 	HWND console = GetConsoleWindow();
-	MoveWindow(console, 0, 0, 800, 1200, TRUE);
+	MoveWindow(console, 0, 0, 8 * (MAX_WIDTH + 4), 12 * (MAX_HEIGHT + 4), TRUE);
 
 	//create Quadtree
-	qNode = new QuadtreeNode();
 	initQNode(qNode);
 	createQuadtree(qNode);
-
-	player = new Player();
 
 	COORD coord;
 	//render new position
@@ -353,7 +359,7 @@ int main()
 
 
 /*
-Bug list:
+Bug "feature" list:
 
 Make object spawn rate increase throughout the game.
 >possibily add health to objects so they are not ohko'able

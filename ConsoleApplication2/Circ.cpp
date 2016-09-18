@@ -2,9 +2,7 @@
 #include <mutex>
 #include "Windows.h"
 #include "Circ.h"
-
-extern HANDLE handle;
-extern std::mutex consoleMtx;
+#include "Source.h"
 
 Circ::Circ()
 {
@@ -19,7 +17,7 @@ void Circ::spawn()
 {
 	width = 3;
 	height = 2;
-	minX = rand() % 80;
+	minX = rand() % MAX_WIDTH;
 	minY = 0;
 	maxX = minX + width - 1;
 	maxY = minY + height - 1;
@@ -44,7 +42,7 @@ void Circ::erase()
 		SetConsoleCursorPosition(handle, coord);
 		std::cout << "   ";
 		coord.Y++;
-		if (coord.Y <= 70) 
+		if (coord.Y < MAX_HEIGHT)
 		{
 			SetConsoleCursorPosition(handle, coord);
 			std::cout << "   ";
@@ -67,7 +65,7 @@ void Circ::render()
 		SetConsoleCursorPosition(handle, coord);
 		std::cout << "OOO";
 		coord.Y++;
-		if (coord.Y <= 70) 
+		if (coord.Y < MAX_HEIGHT)
 		{
 			SetConsoleCursorPosition(handle, coord);
 			std::cout << "OOO";

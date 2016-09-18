@@ -1,6 +1,7 @@
 #pragma once
-#include "Object.h"
-#include "QuadtreeNode.h"
+
+class Object;
+class QuadtreeNode;
 
 class Projectile
 {

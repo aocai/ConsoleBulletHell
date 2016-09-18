@@ -2,21 +2,23 @@
 #include <vector>
 #include <mutex>
 #include "windows.h"
-#include "Projectile.h"
-#include "Player.h"
-#include "Tri.h"
-#include "Circ.h"
-#include "QuadtreeNode.h"
 
-std::vector<Projectile *> *renderProjVector = new std::vector<Projectile *>(); //all projectile vectors
-std::vector<Projectile *> *deleteProjVector = new std::vector<Projectile *>(); //projectile vectors to keep
+class Projectile;
+class QuadtreeNode;
+class Player;
 
-HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
-std::mutex consoleMtx;
-std::mutex projMtx;
-QuadtreeNode *qNode;
-Player *player;
-int finalScore;
+extern std::vector<Projectile *> *renderProjVector;
+
+extern const int NODE_MIN_WIDTH;
+extern const int NODE_MIN_HEIGHT;
+extern const int MAX_HEIGHT;
+extern const int MAX_WIDTH;
+
+extern int finalScore;
+extern HANDLE handle;
+extern std::mutex consoleMtx;
+extern std::mutex projMtx;
+extern QuadtreeNode *qNode;
 
 void clearConsole();
 void interfaceKB();

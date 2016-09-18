@@ -4,6 +4,7 @@
 #include "Windows.h"
 #include "Projectile.h"
 #include "QuadtreeNode.h"
+#include "Source.h"
 
 ShortBeam::ShortBeam()
 {
@@ -12,9 +13,6 @@ ShortBeam::ShortBeam()
 ShortBeam::~ShortBeam()
 {
 }
-
-extern HANDLE handle;
-extern std::mutex consoleMtx;
 
 void ShortBeam::spawnProj(int x, int y) 
 {

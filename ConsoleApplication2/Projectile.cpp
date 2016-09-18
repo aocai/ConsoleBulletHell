@@ -2,9 +2,9 @@
 #include <mutex>
 #include "Windows.h"
 #include "Projectile.h"
+#include "Object.h"
 #include "QuadtreeNode.h"
-
-extern int finalScore;
+#include "Source.h"
 
 Projectile::Projectile()
 {
@@ -38,7 +38,7 @@ void Projectile::render()
 bool Projectile::notOutOfBound()
 {
 	//out of bound test
-	if ((minY < 0) || (maxY > 71) || (minX < 0) || (maxX > 80))
+	if ((minY < 0) || (maxY > MAX_HEIGHT) || (minX < 0) || (maxX > MAX_WIDTH))
 	{
 		return false;
 	}

@@ -1,10 +1,10 @@
 #include "QuadtreeNode.h"
+#include "Object.h"
 #include <stdlib.h>
 #include <vector>
 #include <algorithm>
 #include <mutex>
-
-extern QuadtreeNode *qNode;
+#include "Source.h"
 
 QuadtreeNode::QuadtreeNode()
 {

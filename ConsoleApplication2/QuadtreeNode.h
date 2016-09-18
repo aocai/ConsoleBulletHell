@@ -1,6 +1,7 @@
 #pragma once
-#include "Object.h"
 #include <vector>
+
+class Object;
 
 class QuadtreeNode
 {

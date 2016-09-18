@@ -1,6 +1,7 @@
 #pragma once
 #include "Object.h"
-#include "QuadtreeNode.h"
+
+class QuadtreeNode;
 
 class Player :
 	public Object

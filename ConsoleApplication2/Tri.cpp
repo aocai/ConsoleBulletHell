@@ -2,9 +2,7 @@
 #include <mutex>
 #include "Windows.h"
 #include "Tri.h"
-
-extern HANDLE handle;
-extern std::mutex consoleMtx;
+#include "Source.h"
 
 Tri::Tri()
 {
@@ -18,7 +16,7 @@ void Tri::spawn()
 {
 	width = 6;
 	height = 2;
-	minX = rand() % 74;
+	minX = rand() % (MAX_WIDTH - width);
 	minY = 0;
 	maxX = minX + width - 1;
 	maxY = minY + height - 1;
@@ -44,7 +42,7 @@ void Tri::erase()
 		std::cout << "    ";
 
 		coord.Y++;
-		if (coord.Y <= 70) {
+		if (coord.Y < MAX_HEIGHT) {
 			SetConsoleCursorPosition(handle, coord);
 			std::cout << "      ";
 		}
@@ -67,7 +65,7 @@ void Tri::render()
 		std::cout << "  /\\";
 
 		coord.Y++;
-		if (coord.Y <= 70) 
+		if (coord.Y < MAX_HEIGHT)
 		{
 			SetConsoleCursorPosition(handle, coord);
 			std::cout << "/____\\";

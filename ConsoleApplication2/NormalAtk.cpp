@@ -4,6 +4,7 @@
 #include "Windows.h"
 #include "Projectile.h"
 #include "QuadtreeNode.h"
+#include "Source.h"
 
 NormalAtk::NormalAtk()
 {
@@ -12,9 +13,6 @@ NormalAtk::NormalAtk()
 NormalAtk::~NormalAtk()
 {
 }
-
-extern HANDLE handle;
-extern std::mutex consoleMtx;
 
 void NormalAtk::spawnProj(int x, int y) 
 {
