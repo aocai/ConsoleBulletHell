@@ -14,7 +14,6 @@ public:
 	int speedY; //down = positive
 	bool first;
 	bool collision;
-	virtual void spawnProj(int x, int y);
 	virtual void erase();
 	virtual void update();
 	virtual void render();

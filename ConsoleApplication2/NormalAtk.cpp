@@ -6,15 +6,7 @@
 #include "QuadtreeNode.h"
 #include "Source.h"
 
-NormalAtk::NormalAtk()
-{
-}
-
-NormalAtk::~NormalAtk()
-{
-}
-
-void NormalAtk::spawnProj(int x, int y) 
+NormalAtk::NormalAtk(int x, int y)
 {
 	width = 1;
 	height = 1;
@@ -26,6 +18,10 @@ void NormalAtk::spawnProj(int x, int y)
 	speedY = -1;
 	first = true;
 	collision = false;
+}
+
+NormalAtk::~NormalAtk()
+{
 }
 
 //erase in console

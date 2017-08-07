@@ -71,6 +71,9 @@ void interfaceKB()
 //monitor Keyboard for movement/projectile input
 void monitorKB()
 {
+	time_t z = clock();
+	time_t x = clock();
+	time_t space = clock();
 	int KB_code = 0;
 	//while (KB_code != 27) 
 	while (!isGameOver)
@@ -99,16 +102,31 @@ void monitorKB()
 				//KB_Z
 			case 122:
 			case 90:
-				Player::getInstance().spawnNormalAtk();
+				z = clock() - z;
+				if ((float)z / CLOCKS_PER_SEC > 1)
+				{
+					Player::getInstance().spawnNormalAtk();
+					z = clock();
+				}
 				break;
 				//KB_X
 			case 120:
 			case 88:
-				Player::getInstance().spawnShortBeam();
+				x = clock() - x;
+				if ((float)x / CLOCKS_PER_SEC > 1)
+				{
+					Player::getInstance().spawnShortBeam();
+					x = clock();
+				}
 				break;
 				//KB_SPACE
 			case 32:
-				Player::getInstance().ult();
+				space = clock() - space;
+				if ((float)space / CLOCKS_PER_SEC > 60)
+				{
+					Player::getInstance().ult();
+					space = clock();
+				}
 				break;
 				//KB_ESC
 			case 27:
@@ -191,11 +209,7 @@ void updateProjectile()
 		{
 			proj->first = false;
 		}
-		if (proj->notOutOfBound()) 
-		{
-			//keep in projVect1, do nothing
-		}
-		else
+		if (!proj->notOutOfBound()) 
 		{
 			//proj to be thrown away
 			deleteProjVector.push_back(proj);
@@ -209,7 +223,11 @@ void updateProjectile()
 void setup()
 {
 	clock_t t;
+	clock_t f;
+	clock_t fps;
 	t = clock();
+	f = clock();
+	fps = clock();
 
 	while (!isGameOver)
 	{
@@ -275,6 +293,7 @@ void setup()
 		consoleMtx.unlock();
 		t = clock();
 
+		//clear console
 		system("cls");
 
 		//render object with updated position
@@ -382,7 +401,21 @@ void setup()
 		std::cout << ((float)t/CLOCKS_PER_SEC) << "secs";
 		consoleMtx.unlock();
 		t = clock();
-		//Sleep(50);
+
+		f = clock() - f;
+		double frameTime = (float)f / CLOCKS_PER_SEC;
+		Sleep(max(0,(1 / 20.0 - frameTime)*1000));
+
+		fps = clock() - fps;
+		coord.X = 0;
+		coord.Y = 10;
+		consoleMtx.lock();
+		SetConsoleCursorPosition(handle, coord);
+		std::cout << 1.0/((float)fps / CLOCKS_PER_SEC) << "FPS";
+		consoleMtx.unlock();
+
+		f = clock();
+		fps = clock();
 	}
 	gameOver();
 }

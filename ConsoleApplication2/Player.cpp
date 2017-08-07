@@ -161,8 +161,7 @@ void Player::collisionDetection(QuadtreeNode *node)
 //spawn new projectile and add to list of projectiles
 void Player::spawnShortBeam() 
 {
-	Projectile *shortBeam = new ShortBeam();
-	shortBeam->spawnProj(minX, minY);
+	Projectile *shortBeam = new ShortBeam(minX, minY);
 
 	projMtx.lock();
 
@@ -175,10 +174,8 @@ void Player::spawnShortBeam()
 //spawn new projectile and add to list of projectiles
 void Player::spawnNormalAtk() 
 {
-	Projectile *normalAtkLeft = new NormalAtk();
-	Projectile *normalAtkRight = new NormalAtk();
-	normalAtkLeft->spawnProj(minX, minY);
-	normalAtkRight->spawnProj(minX + 4, minY);
+	Projectile *normalAtkLeft = new NormalAtk(minX, minY);
+	Projectile *normalAtkRight = new NormalAtk(minX + 4, minY);
 
 	projMtx.lock();
 

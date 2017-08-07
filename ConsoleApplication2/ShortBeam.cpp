@@ -6,15 +6,7 @@
 #include "QuadtreeNode.h"
 #include "Source.h"
 
-ShortBeam::ShortBeam()
-{
-}
-
-ShortBeam::~ShortBeam()
-{
-}
-
-void ShortBeam::spawnProj(int x, int y) 
+ShortBeam::ShortBeam(int x, int y)
 {
 	width = 1;
 	height = 3;
@@ -26,6 +18,10 @@ void ShortBeam::spawnProj(int x, int y)
 	speedY = -3;
 	first = true;
 	collision = false;
+}
+
+ShortBeam::~ShortBeam()
+{
 }
 
 //erase in console

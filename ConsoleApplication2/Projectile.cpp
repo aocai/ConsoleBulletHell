@@ -14,10 +14,6 @@ Projectile::~Projectile()
 {
 }
 
-void Projectile::spawnProj(int x, int y) 
-{
-}
-
 void Projectile::erase() 
 {
 }
