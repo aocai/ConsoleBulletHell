@@ -167,7 +167,7 @@ void Player::spawnShortBeam()
 	projMtx.lock();
 
 	shortBeam->render();
-	renderProjVector->push_back(shortBeam);
+	renderProjVector.push_back(shortBeam);
 
 	projMtx.unlock();
 }
@@ -184,8 +184,8 @@ void Player::spawnNormalAtk()
 
 	normalAtkLeft->render();
 	normalAtkRight->render();
-	renderProjVector->push_back(normalAtkLeft);
-	renderProjVector->push_back(normalAtkRight);
+	renderProjVector.push_back(normalAtkLeft);
+	renderProjVector.push_back(normalAtkRight);
 
 	projMtx.unlock();
 }

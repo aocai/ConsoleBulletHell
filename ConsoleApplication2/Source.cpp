@@ -13,8 +13,8 @@
 
 bool isGameOver;
 
-std::vector<Projectile *> *renderProjVector = new std::vector<Projectile *>();
-std::vector<Projectile *> *deleteProjVector = new std::vector<Projectile *>();
+std::vector<Projectile *> renderProjVector;
+std::vector<Projectile *> deleteProjVector;
 
 const int NODE_MIN_WIDTH = 12;
 const int NODE_MIN_HEIGHT = 8;
@@ -128,20 +128,20 @@ void gameOver()
 	clearConsole();
 
 	//delete and clear from the three projectile vectors
-	for (unsigned int i = 0; i < renderProjVector->size(); ++i)
+	for (unsigned int i = 0; i < renderProjVector.size(); ++i)
 	{
-		(*renderProjVector)[i]->erase();
-		delete (*renderProjVector)[i];
+		renderProjVector[i]->erase();
+		delete renderProjVector[i];
 	}
 
-	for (unsigned int i = 0; i < deleteProjVector->size(); ++i)
+	for (unsigned int i = 0; i < deleteProjVector.size(); ++i)
 	{
-		(*deleteProjVector)[i]->erase();
-		delete (*deleteProjVector)[i];
+		deleteProjVector[i]->erase();
+		delete deleteProjVector[i];
 	}
 
-	renderProjVector->clear();
-	deleteProjVector->clear();
+	renderProjVector.clear();
+	deleteProjVector.clear();
 
 	//Print end screen
 	COORD coord;
@@ -175,13 +175,13 @@ void gameOver()
 void updateProjectile()
 {
 	//erase all current projectile before next frame
-	for (unsigned int i = 0; i < renderProjVector->size(); ++i)
+	for (unsigned int i = 0; i < renderProjVector.size(); ++i)
 	{
-		Projectile *proj = (*renderProjVector)[i];
+		Projectile *proj = renderProjVector[i];
 		if (!proj->first)
 		{
 			//erase the render and update the position
-			proj->erase();
+			//proj->erase();
 			if (!proj->collision)
 			{
 				proj->update();
@@ -198,9 +198,9 @@ void updateProjectile()
 		else
 		{
 			//proj to be thrown away
-			deleteProjVector->push_back(proj);
-			std::swap((*renderProjVector)[i], renderProjVector->back());
-			renderProjVector->pop_back();
+			deleteProjVector.push_back(proj);
+			std::swap(renderProjVector[i], renderProjVector.back());
+			renderProjVector.pop_back();
 			--i;
 		}
 	}
@@ -239,7 +239,6 @@ void setup()
 
 		//erase previous object render and update all object position
 		qNode->updateObject();
-		system("cls");
 
 		t = clock() - t;
 		coord.X = 0;
@@ -262,18 +261,6 @@ void setup()
 		consoleMtx.unlock();
 		t = clock();
 
-		//render object with updated position
-		qNode->renderFromTree();
-
-		t = clock() - t;
-		coord.X = 0;
-		coord.Y = 3;
-		consoleMtx.lock();
-		SetConsoleCursorPosition(handle, coord);
-		std::cout << ((float)t / CLOCKS_PER_SEC) << "secs";
-		consoleMtx.unlock();
-		t = clock();
-
 		//erase previous projectile render and update all projectile position
 		projMtx.lock();
 		updateProjectile();
@@ -288,22 +275,36 @@ void setup()
 		consoleMtx.unlock();
 		t = clock();
 
+		system("cls");
+
+		//render object with updated position
+		qNode->renderFromTree();
+
+		t = clock() - t;
+		coord.X = 0;
+		coord.Y = 3;
+		consoleMtx.lock();
+		SetConsoleCursorPosition(handle, coord);
+		std::cout << ((float)t / CLOCKS_PER_SEC) << "secs";
+		consoleMtx.unlock();
+		t = clock();
+
 		//render all projectiles. delete projectiles that have collision flagged
 		projMtx.lock();
-		for (unsigned int i = 0; i < renderProjVector->size(); ++i)
+		for (unsigned int i = 0; i < renderProjVector.size(); ++i)
 		{
-			if ((*renderProjVector)[i]->collision)
+			if (renderProjVector[i]->collision)
 			{
 				//collision flagged. Add to projVect3 to be deleted
-				deleteProjVector->push_back((*renderProjVector)[i]);
-				std::swap((*renderProjVector)[i], renderProjVector->back());
-				renderProjVector->pop_back();
+				deleteProjVector.push_back(renderProjVector[i]);
+				std::swap(renderProjVector[i], renderProjVector.back());
+				renderProjVector.pop_back();
 				--i;
 			}
 			else
 			{
 				//render
-				(*renderProjVector)[i]->render();
+				renderProjVector[i]->render();
 			}
 		}
 		projMtx.unlock();
@@ -333,9 +334,9 @@ void setup()
 
 		projMtx.lock();
 		//check collision. Both objects and projectiles that have collided are flagged
-		for (unsigned int i = 0; i < renderProjVector->size(); ++i)
+		for (unsigned int i = 0; i < renderProjVector.size(); ++i)
 		{
-			Projectile *proj = (*renderProjVector)[i];
+			Projectile *proj = renderProjVector[i];
 			proj->collisionTest(qNode);
 		}
 
@@ -365,12 +366,12 @@ void setup()
 		t = clock();
 
 		//free non-rendered projectiles
-		for (unsigned int i = 0; i < deleteProjVector->size(); ++i)
+		for (unsigned int i = 0; i < deleteProjVector.size(); ++i)
 		{
-			delete (*deleteProjVector)[i];
+			delete deleteProjVector[i];
 		}
 
-		deleteProjVector->clear();
+		deleteProjVector.clear();
 		projMtx.unlock();
 
 		t = clock() - t;

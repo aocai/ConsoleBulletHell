@@ -7,7 +7,7 @@ class Projectile;
 class QuadtreeNode;
 class Player;
 
-extern std::vector<Projectile *> *renderProjVector;
+extern std::vector<Projectile *> renderProjVector;
 
 extern const int NODE_MIN_WIDTH;
 extern const int NODE_MIN_HEIGHT;
