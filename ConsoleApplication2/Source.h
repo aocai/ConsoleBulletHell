@@ -22,7 +22,7 @@ extern QuadtreeNode *qNode;
 
 void clearConsole();
 void interfaceKB();
-void monitorKB(Player *player);
+void monitorKB();
 void setup();
 void gameOver();
 void updateProjectile();

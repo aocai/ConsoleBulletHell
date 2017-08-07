@@ -78,9 +78,9 @@ void Projectile::collisionTest(QuadtreeNode *node)
 		collisionTest(node->se);
 	}
 
-	for (unsigned int i = 0; i < node->nodeObjectVector->size(); ++i)
+	for (unsigned int i = 0; i < node->nodeObjectVector.size(); ++i)
 	{
-		Object *obj = (*node->nodeObjectVector)[i];
+		Object *obj = (node->nodeObjectVector)[i];
 
 		if (((minX >= obj->minX && minX <= obj->maxX) || (maxX >= obj->minX && maxX <= obj->maxX)) &&
 			((minY >= obj->minY && minY <= obj->maxY) || (maxY >= obj->minY && maxY <= obj->maxY)))

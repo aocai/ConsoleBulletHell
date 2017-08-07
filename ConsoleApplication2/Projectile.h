@@ -22,5 +22,5 @@ public:
 	virtual bool projInQuadtreeNode(QuadtreeNode *qNode);
 	virtual void collisionTest(QuadtreeNode *qNode);
 	Projectile();
-	~Projectile();
+	virtual ~Projectile();
 };

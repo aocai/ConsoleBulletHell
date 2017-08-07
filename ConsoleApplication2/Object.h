@@ -16,5 +16,5 @@ public:
 	virtual void update();
 	virtual bool outOfBound();
 	Object();
-	~Object();
+	virtual ~Object();
 };

@@ -9,6 +9,7 @@
 #include "Projectile.h"
 #include "Tri.h"
 #include "Circ.h"
+#include <time.h>
 
 bool isGameOver;
 
@@ -22,7 +23,6 @@ const int MAX_WIDTH = 80;
 int finalScore = 0;
 HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
 QuadtreeNode *qNode = new QuadtreeNode();
-Player *player = new Player();
 std::mutex consoleMtx;
 std::mutex projMtx;
 
@@ -69,7 +69,7 @@ void interfaceKB()
 }
 
 //monitor Keyboard for movement/projectile input
-void monitorKB(Player *player)
+void monitorKB()
 {
 	int KB_code = 0;
 	//while (KB_code != 27) 
@@ -82,33 +82,33 @@ void monitorKB(Player *player)
 			{
 				//KB_LEFT
 			case 75:
-				player->speedX -= 1;
+				Player::getInstance().speedX -= 1;
 				break;
 				//KB_RIGHT
 			case 77:
-				player->speedX += 1;
+				Player::getInstance().speedX += 1;
 				break;
 				//KB_UP
 			case 72:
-				player->speedY -= 1;
+				Player::getInstance().speedY -= 1;
 				break;
 				//KB_DOWN
 			case 80:
-				player->speedY += 1;
+				Player::getInstance().speedY += 1;
 				break;
 				//KB_Z
 			case 122:
 			case 90:
-				player->spawnNormalAtk();
+				Player::getInstance().spawnNormalAtk();
 				break;
 				//KB_X
 			case 120:
 			case 88:
-				player->spawnShortBeam();
+				Player::getInstance().spawnShortBeam();
 				break;
 				//KB_SPACE
 			case 32:
-				player->ult();
+				Player::getInstance().ult();
 				break;
 				//KB_ESC
 			case 27:
@@ -208,35 +208,85 @@ void updateProjectile()
 
 void setup()
 {
+	clock_t t;
+	t = clock();
+
 	while (!isGameOver)
 	{
 		//random generate objects
-		if (rand() % 5 == 0)
+		if (rand() % 20 == 0)
 		{
 			Object *tri = new Tri();
 			tri->spawn();
 			qNode->assignQNode(tri);
 		}
-		if (rand() % 5 == 0)
+		if (rand() % 20 == 0)
 		{
 			Object *circ = new Circ();
 			circ->spawn();
 			qNode->assignQNode(circ);
 		}
 
+		t = clock() - t;
+		COORD coord;
+		coord.X = 0;
+		coord.Y = 0;
+		consoleMtx.lock();
+		SetConsoleCursorPosition(handle, coord);
+		std::cout << ((float)t / CLOCKS_PER_SEC) << "secs";
+		consoleMtx.unlock();
+		t = clock();
+
 		//erase previous object render and update all object position
 		qNode->updateObject();
+		system("cls");
+
+		t = clock() - t;
+		coord.X = 0;
+		coord.Y = 1;
+		consoleMtx.lock();
+		SetConsoleCursorPosition(handle, coord);
+		std::cout << ((float)t / CLOCKS_PER_SEC) << "secs";
+		consoleMtx.unlock();
+		t = clock();
 
 		//Update tree to reflect all object position change
 		qNode->updateQuadtree();
 
+		t = clock() - t;
+		coord.X = 0;
+		coord.Y = 2;
+		consoleMtx.lock();
+		SetConsoleCursorPosition(handle, coord);
+		std::cout << ((float)t / CLOCKS_PER_SEC) << "secs";
+		consoleMtx.unlock();
+		t = clock();
+
 		//render object with updated position
 		qNode->renderFromTree();
+
+		t = clock() - t;
+		coord.X = 0;
+		coord.Y = 3;
+		consoleMtx.lock();
+		SetConsoleCursorPosition(handle, coord);
+		std::cout << ((float)t / CLOCKS_PER_SEC) << "secs";
+		consoleMtx.unlock();
+		t = clock();
 
 		//erase previous projectile render and update all projectile position
 		projMtx.lock();
 		updateProjectile();
 		projMtx.unlock();
+
+		t = clock() - t;
+		coord.X = 0;
+		coord.Y = 4;
+		consoleMtx.lock();
+		SetConsoleCursorPosition(handle, coord);
+		std::cout << ((float)t / CLOCKS_PER_SEC) << "secs";
+		consoleMtx.unlock();
+		t = clock();
 
 		//render all projectiles. delete projectiles that have collision flagged
 		projMtx.lock();
@@ -258,10 +308,28 @@ void setup()
 		}
 		projMtx.unlock();
 
+		t = clock() - t;
+		coord.X = 0;
+		coord.Y = 5;
+		consoleMtx.lock();
+		SetConsoleCursorPosition(handle, coord);
+		std::cout << ((float)t / CLOCKS_PER_SEC) << "secs";
+		consoleMtx.unlock();
+		t = clock();
+
 		//update and render player
-		player->erase();
-		player->update();
-		player->render();
+		Player::getInstance().erase();
+		Player::getInstance().update();
+		Player::getInstance().render();
+
+		t = clock() - t;
+		coord.X = 0;
+		coord.Y = 6;
+		consoleMtx.lock();
+		SetConsoleCursorPosition(handle, coord);
+		std::cout << ((float)t / CLOCKS_PER_SEC) << "secs";
+		consoleMtx.unlock();
+		t = clock();
 
 		projMtx.lock();
 		//check collision. Both objects and projectiles that have collided are flagged
@@ -271,12 +339,30 @@ void setup()
 			proj->collisionTest(qNode);
 		}
 
+		t = clock() - t;
+		coord.X = 0;
+		coord.Y = 7;
+		consoleMtx.lock();
+		SetConsoleCursorPosition(handle, coord);
+		std::cout << ((float)t / CLOCKS_PER_SEC) << "secs";
+		consoleMtx.unlock();
+		t = clock();
+
 		//check for player collision, and flag if true
-		player->collisionDetection(qNode);
-		if (player->collision)
+		Player::getInstance().collisionDetection(qNode);
+		if (Player::getInstance().collision)
 		{
 			isGameOver = true;
 		}
+
+		t = clock() - t;
+		coord.X = 0;
+		coord.Y = 8;
+		consoleMtx.lock();
+		SetConsoleCursorPosition(handle, coord);
+		std::cout << ((float)t / CLOCKS_PER_SEC) << "secs";
+		consoleMtx.unlock();
+		t = clock();
 
 		//free non-rendered projectiles
 		for (unsigned int i = 0; i < deleteProjVector->size(); ++i)
@@ -287,7 +373,15 @@ void setup()
 		deleteProjVector->clear();
 		projMtx.unlock();
 
-		Sleep(50);
+		t = clock() - t;
+		coord.X = 0;
+		coord.Y = 9;
+		consoleMtx.lock();
+		SetConsoleCursorPosition(handle, coord);
+		std::cout << ((float)t/CLOCKS_PER_SEC) << "secs";
+		consoleMtx.unlock();
+		t = clock();
+		//Sleep(50);
 	}
 	gameOver();
 }
@@ -313,7 +407,7 @@ void initQNode(QuadtreeNode *node)
 	node->maxX = MAX_WIDTH;
 	node->minY = 0;
 	node->maxY = MAX_HEIGHT;
-	node->nodeObjectVector = new std::vector<Object *>();
+	//node->nodeObjectVector = new std::vector<Object *>();
 }
 
 //set up game. called at game start
@@ -321,10 +415,10 @@ void setUpGameThread()
 {
 	isGameOver = false;
 	finalScore = 0;
-	player->spawn();
-	player->render();
+	Player::getInstance().spawn();
+	Player::getInstance().render();
 	std::thread setupThread(setup);
-	std::thread KeyPressThread(monitorKB, player);
+	std::thread KeyPressThread(monitorKB);
 
 	setupThread.join();
 	KeyPressThread.join();
@@ -333,7 +427,7 @@ void setUpGameThread()
 int main() 
 {
 	HWND console = GetConsoleWindow();
-	MoveWindow(console, 0, 0, 8 * (MAX_WIDTH + 4), 12 * (MAX_HEIGHT + 4), TRUE);
+	MoveWindow(console, 0, 0, 8 * (MAX_WIDTH + 4), 16 * (MAX_HEIGHT + 4), TRUE);
 
 	//create Quadtree
 	initQNode(qNode);

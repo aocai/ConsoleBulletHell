@@ -6,11 +6,14 @@
 #include "NormalAtk.h"
 #include "QuadtreeNode.h"
 #include "Source.h"
+#include "Player.h"
 #include <vector>
 #include <mutex>
 
-Player::Player()
+Player& Player::getInstance()
 {
+	static Player instance;
+	return instance;
 }
 
 Player::~Player()
@@ -141,9 +144,9 @@ void Player::collisionDetection(QuadtreeNode *node)
 		collisionDetection(node->se);
 	}
 
-	for (unsigned int i = 0; i < node->nodeObjectVector->size(); ++i)
+	for (unsigned int i = 0; i < node->nodeObjectVector.size(); ++i)
 	{
-		Object *obj = (*node->nodeObjectVector)[i];
+		Object *obj = (node->nodeObjectVector)[i];
 
 		//check if object touches player
 		if (((minX >= obj->minX && minX <= obj->maxX) || (maxX >= obj->minX && maxX <= obj->maxX)) &&

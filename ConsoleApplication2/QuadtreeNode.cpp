@@ -23,7 +23,6 @@ void QuadtreeNode::createSubNodes()
 	nw->maxX = xCenter();
 	nw->minY = minY;
 	nw->maxY = yCenter();
-	nw->nodeObjectVector = new std::vector<Object *>();
 
 	ne = new QuadtreeNode();
 	ne->parent = this;
@@ -31,7 +30,6 @@ void QuadtreeNode::createSubNodes()
 	ne->maxX = maxX;
 	ne->minY = minY;
 	ne->maxY = yCenter();
-	ne->nodeObjectVector = new std::vector<Object *>();
 
 	sw = new QuadtreeNode();
 	sw->parent = this;
@@ -39,7 +37,6 @@ void QuadtreeNode::createSubNodes()
 	sw->maxX = xCenter();
 	sw->minY = yCenter() + 1;
 	sw->maxY = maxY;
-	sw->nodeObjectVector = new std::vector<Object *>();
 
 	se = new QuadtreeNode();
 	se->parent = this;
@@ -47,7 +44,6 @@ void QuadtreeNode::createSubNodes()
 	se->maxX = maxX;
 	se->minY = yCenter() + 1;
 	se->maxY = maxY;
-	se->nodeObjectVector = new std::vector<Object *>();
 }
 
 //assign the object to the correct quadtree node
@@ -61,13 +57,13 @@ void QuadtreeNode::assignQNode(Object* obj)
 	else if (nw == NULL) 
 	{
 		//object lies in the leaf node
-		nodeObjectVector->push_back(obj);
+		nodeObjectVector.push_back(obj);
 		return;
 	}
 	else if (onNodeCenters(obj))
 	{
 		//object lies on boundary between two nodes
-		nodeObjectVector->push_back(obj);
+		nodeObjectVector.push_back(obj);
 		return;
 	}
 	else
@@ -121,37 +117,38 @@ void QuadtreeNode::updateQuadtree()
 		se->updateQuadtree();
 	}
 
-	for (unsigned int i = 0; i < nodeObjectVector->size(); ++i)
+	for (unsigned int i = 0; i < nodeObjectVector.size(); ++i)
 	{
 		//object is out of bound or there has been a collision. object is removed from tree
-		if ((*nodeObjectVector)[i]->outOfBound() || (*nodeObjectVector)[i]->collision)
+		if (nodeObjectVector[i]->outOfBound() || nodeObjectVector[i]->collision)
 		{
-			std::swap((*nodeObjectVector)[i], nodeObjectVector->back());
-			delete nodeObjectVector->back();
-			nodeObjectVector->resize(nodeObjectVector->size() - 1);
+			std::swap(nodeObjectVector[i], nodeObjectVector.back());
+			delete nodeObjectVector.back();
+			nodeObjectVector.resize(nodeObjectVector.size() - 1);
 			--i;
 		}
 		//check if object is still in this quadtree node
-		else if (!objInQuadtreeNode((*nodeObjectVector)[i]))
+		else if (!objInQuadtreeNode(nodeObjectVector[i]))
 		{
 			//object is in another quadtree node. reassign the node through another tree traversal from base node, qNode
-			qNode->assignQNode((*nodeObjectVector)[i]);
+			qNode->assignQNode(nodeObjectVector[i]);
 
-			std::swap((*nodeObjectVector)[i], nodeObjectVector->back());
-			nodeObjectVector->pop_back();
+			std::swap(nodeObjectVector[i], nodeObjectVector.back());
+			nodeObjectVector.pop_back();
 			--i;
 		}
+		//check if its the leaf node
 		else if (nw)
 		{
 			//object is in this node, and there are child nodes
 			//check if on sub node boundaries
-			if (!onNodeCenters((*nodeObjectVector)[i]))
+			if (!onNodeCenters(nodeObjectVector[i]))
 			{
 				//not on sub node boundaries. Call assignQNode() with this node as base
-				assignQNode((*nodeObjectVector)[i]);
+				assignQNode(nodeObjectVector[i]);
 
-				std::swap((*nodeObjectVector)[i], nodeObjectVector->back());
-				nodeObjectVector->pop_back();
+				std::swap(nodeObjectVector[i], nodeObjectVector.back());
+				nodeObjectVector.pop_back();
 				--i;
 			}
 			//else do nothing. node still in same nodeObjectVector (not a leaf node)
@@ -170,9 +167,9 @@ void QuadtreeNode::renderFromTree()
 		sw->renderFromTree();
 		se->renderFromTree();
 	}
-	for (unsigned int i = 0; i < nodeObjectVector->size(); ++i)
+	for (unsigned int i = 0; i < nodeObjectVector.size(); ++i)
 	{
-		(*nodeObjectVector)[i]->render();
+		nodeObjectVector[i]->render();
 	}
 }
 
@@ -186,12 +183,12 @@ void QuadtreeNode::updateObject()
 		sw->updateObject();
 		se->updateObject();
 	}
-	for (unsigned int i = 0; i < nodeObjectVector->size(); ++i)
+	for (unsigned int i = 0; i < nodeObjectVector.size(); ++i)
 	{
-		Object *obj = (*nodeObjectVector)[i];
+		Object *obj = nodeObjectVector[i];
 		if (!obj->first)
 		{
-			obj->erase();
+			//obj->erase();
 			if (!obj->collision)
 			{
 				obj->update();
@@ -215,12 +212,12 @@ void QuadtreeNode::eraseAllObjects()
 		sw->eraseAllObjects();
 		se->eraseAllObjects();
 	}
-	for (unsigned int i = 0; i < nodeObjectVector->size(); ++i)
+	for (unsigned int i = 0; i < nodeObjectVector.size(); ++i)
 	{
-		delete (*nodeObjectVector)[i];
+		delete nodeObjectVector[i];
 	}
 
-	nodeObjectVector->clear();
+	nodeObjectVector.clear();
 }
 
 //free quadtree memory. called at game's end
@@ -233,7 +230,6 @@ void QuadtreeNode::freeQuadtree()
 		sw->freeQuadtree();
 		se->freeQuadtree();
 	}
-	delete nodeObjectVector;
 	if (nw)
 	{
 		delete nw;

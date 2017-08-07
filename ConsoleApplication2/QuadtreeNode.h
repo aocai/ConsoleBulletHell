@@ -12,7 +12,7 @@ public:
 	int xCenter() const { return (minX + maxX) / 2; } //round down
 	int yCenter() const { return (minY + maxY) / 2; }
 
-	std::vector<Object *> *nodeObjectVector;
+	std::vector<Object *> nodeObjectVector;
 
 	void createSubNodes();
 	void assignQNode(Object* obj);
